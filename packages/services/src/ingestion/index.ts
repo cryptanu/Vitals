@@ -7,7 +7,9 @@ export type {
   CalendarIngestionResult,
   NormalizedCalendarEvent,
   AttestationResult,
+  StorageProof,
 } from "./types";
+export { persistCalendarSnapshot } from "./storage/filecoin";
 
 export const ingestCalendars = async (
   sources: CalendarSource[],

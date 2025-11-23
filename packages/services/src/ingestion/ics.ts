@@ -8,8 +8,9 @@ import type {
   NormalizedCalendarEvent,
   RawCalendarPayload,
 } from "./types";
-import { attestIcsPayload } from "./providers/flare-fdc";
+import { attestCalendarPayload } from "./providers";
 import { getSampleIcs } from "./samples";
+import { persistCalendarSnapshot } from "./storage/filecoin";
 
 const isVEvent = (entry: unknown): entry is VEvent => {
   if (!entry || typeof entry !== "object") return false;
@@ -105,13 +106,15 @@ export const ingestCalendarFromUrl = async (
       .map((event) => normalizeEvent(event, source))
       .filter((event): event is NormalizedCalendarEvent => Boolean(event));
 
-  const attestation = await attestIcsPayload(raw);
+  const attestation = await attestCalendarPayload(raw);
+  const storage = await persistCalendarSnapshot(raw, attestation);
 
   return {
     source,
     raw,
     attestation,
     events,
+    storage,
   };
 };
 

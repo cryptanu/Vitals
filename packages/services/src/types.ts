@@ -66,5 +66,6 @@ export type {
   CalendarIngestionResult,
   NormalizedCalendarEvent,
   AttestationResult,
+  StorageProof,
 } from "./ingestion/types";
 
