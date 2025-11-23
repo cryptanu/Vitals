@@ -1,0 +1,20 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">De-concierge Logo</title>
+  <desc id="desc">Delta-shaped mark in a turquoise to violet gradient circle.</desc>
+  <defs>
+    <radialGradient id="logoGradient" cx="25%" cy="20%" r="100%">
+      <stop offset="0%" stop-color="#5EEAD4" />
+      <stop offset="55%" stop-color="#34D399" />
+      <stop offset="100%" stop-color="#6366F1" />
+    </radialGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#0f172a" flood-opacity="0.35" />
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="180" fill="url(#logoGradient)" filter="url(#shadow)" />
+  <path
+    d="M256 134c6.3 0 12.1 3.4 15.3 8.9l124.5 221.7c6.6 11.8-1.8 26.4-15.3 26.4H131.5c-13.6 0-21.9-14.6-15.3-26.4L240.7 143c3.2-5.5 9-8.9 15.3-8.9Zm0 62.4L181.8 339.6h148.4L256 196.4Z"
+    fill="#0B1120"
+  />
+</svg>
+

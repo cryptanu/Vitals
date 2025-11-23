@@ -1,0 +1,33 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="coverTitle coverDesc">
+  <title id="coverTitle">De-concierge Cover Art</title>
+  <desc id="coverDesc">Gradient background with flowing mesh lines representing calendar synchronization.</desc>
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="50%" stop-color="#1e3a8a" />
+      <stop offset="100%" stop-color="#312e81" />
+    </linearGradient>
+    <linearGradient id="pulseGradient" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="rgba(94,234,212,0)" />
+      <stop offset="30%" stop-color="rgba(94,234,212,0.35)" />
+      <stop offset="70%" stop-color="rgba(129,140,248,0.35)" />
+      <stop offset="100%" stop-color="rgba(129,140,248,0)" />
+    </linearGradient>
+    <filter id="blur" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="35" />
+    </filter>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bgGradient)" />
+  <g opacity="0.55" filter="url(#blur)">
+    <circle cx="480" cy="260" r="220" fill="rgba(94,234,212,0.35)" />
+    <circle cx="1180" cy="620" r="260" fill="rgba(129,140,248,0.6)" />
+    <circle cx="960" cy="280" r="200" fill="rgba(56,189,248,0.35)" />
+  </g>
+  <g fill="none" stroke="url(#pulseGradient)" stroke-width="2.2">
+    <path d="M-40 640C160 520 220 540 360 600s300 120 460 50 310-150 470-100 290 190 470 110" opacity="0.75" />
+    <path d="M-50 520c210-120 350-120 520-40s300 40 460-40 320-130 470-40 290 220 470 140" opacity="0.55" />
+    <path d="M-60 720c240-90 360-60 520 0s320 100 480 20 310-200 470-140 290 240 470 160" opacity="0.4" />
+  </g>
+  <rect x="200" y="160" width="1200" height="580" rx="48" fill="rgba(15,23,42,0.35)" stroke="rgba(226,232,240,0.1)" stroke-width="1.5" />
+</svg>
+
