@@ -17,6 +17,21 @@ Currently implemented
   - Fetches remote ICS feeds
   - Normalizes events into our internal format
   - Generates a placeholder Flare FDC attestation (to be swapped with real proof)
+  - Persists the snapshot to Filecoin Onchain Cloud via the Synapse SDK when credentials are present
+
+### Synapse integration
+
+Set the following environment variables (workspace root or `packages/services/.env`) to enable real Filecoin storage:
+
+```
+SYNAPSE_NETWORK=calibration          # or mainnet
+SYNAPSE_RPC_URL=https://api.node.glif.io/rpc/v1
+SYNAPSE_PRIVATE_KEY=0x...
+# optional overrides
+SYNAPSE_ACCOUNT_LABEL=DeConciergeStaging
+```
+
+If these values are missing the service falls back to deterministic CIDs so local development stays unblocked.
 
 Roadmap
 -------

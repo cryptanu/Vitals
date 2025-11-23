@@ -1,6 +1,7 @@
 import { createHash } from "crypto";
 import { DateTime } from "luxon";
 import { fetch } from "undici";
+import { getSynapseClient } from "./synapse";
 import type { AttestationResult, RawCalendarPayload, StorageProof } from "../types";
 
 type FilecoinResponse = {
@@ -50,6 +51,11 @@ export const persistCalendarSnapshot = async (
   payload: RawCalendarPayload,
   attestation: AttestationResult
 ): Promise<StorageProof> => {
+  const synapseProof = await persistWithSynapse(payload, attestation);
+  if (synapseProof) {
+    return synapseProof;
+  }
+
   const endpoint = getEndpoint();
   if (!endpoint) {
     return fallbackStorageProof(
@@ -92,6 +98,63 @@ export const persistCalendarSnapshot = async (
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown Filecoin error";
     return fallbackStorageProof(payload, attestation, `Failed to persist snapshot: ${message}`);
+  }
+};
+
+const persistWithSynapse = async (
+  payload: RawCalendarPayload,
+  attestation: AttestationResult
+): Promise<StorageProof | null> => {
+  const client = await getSynapseClient();
+  if (!client) {
+    return null;
+  }
+
+  try {
+    const contentBuffer = Buffer.from(payload.icsBody, "utf8");
+    const label = `vitals-${payload.source ?? "calendar"}-${DateTime.utc().toFormat("yyyyLLddHHmmss")}`;
+    const result = (await client.storage.createDataSetAndAddPieces({
+      dataset: {
+        label,
+        metadata: {
+          source: payload.source,
+          storyteller: "de-concierge",
+          fetchedAtISO: payload.fetchedAtISO,
+          attestationDigest: attestation.digest,
+        },
+      },
+      pieces: [
+        {
+          bytes: contentBuffer,
+          mimeType: "text/calendar",
+          metadata: {
+            contentHash: payload.contentHash,
+            attestDigest: attestation.digest,
+            issuedAt: payload.fetchedAtISO ?? DateTime.utc().toISO(),
+          },
+        },
+      ],
+    })) as {
+      datasetId?: string;
+      pieces?: Array<{ cid?: string; uri?: string; notes?: string; persistedAtISO?: string }>;
+      piece?: { cid?: string; uri?: string; notes?: string; persistedAtISO?: string };
+    };
+
+    const piece = result.pieces?.[0] ?? result.piece;
+    if (!piece?.cid) {
+      return null;
+    }
+
+    return {
+      cid: piece.cid,
+      uri: piece.uri ?? `synapse://${result.datasetId ?? "dataset"}/${piece.cid}`,
+      persistedAtISO: piece.persistedAtISO ?? DateTime.utc().toISO() ?? payload.fetchedAtISO,
+      notes: piece.notes ?? "Calendar snapshot persisted via Synapse SDK",
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown Synapse error";
+    console.warn("[Synapse] storage failure, falling back to mock CID:", message);
+    return null;
   }
 };
 
