@@ -2,7 +2,7 @@ export { generateIntentPlan } from "./services/intent-plan";
 export { listQuickPrompts } from "./services/prompts";
 export { getPropertyInventory } from "./services/properties";
 export { getTimelineForProperty } from "./services/timeline";
-export { ingestCalendarFromUrl } from "./ingestion";
+export { ingestCalendarFromUrl, ingestCalendars } from "./ingestion";
 
 export type {
   IntentPlan,
@@ -10,7 +10,9 @@ export type {
   PropertyDigest,
   QuickPrompt,
   TimelineEvent,
+  CalendarSource,
   CalendarIngestionResult,
   NormalizedCalendarEvent,
   AttestationResult,
 } from "./types";
+export type { GenerateIntentPlanOptions } from "./services/intent-plan";

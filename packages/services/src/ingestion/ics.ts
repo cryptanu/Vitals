@@ -9,6 +9,7 @@ import type {
   RawCalendarPayload,
 } from "./types";
 import { attestIcsPayload } from "./providers/flare-fdc";
+import { getSampleIcs } from "./samples";
 
 const isVEvent = (entry: unknown): entry is VEvent => {
   if (!entry || typeof entry !== "object") return false;
@@ -51,20 +52,42 @@ export const ingestCalendarFromUrl = async (
   source: CalendarSource,
   options: FetchOptions = {}
 ): Promise<CalendarIngestionResult> => {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? 15_000);
-
-  try {
-    const response = await fetch(source.url, {
-      headers: options.headers,
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch ICS (${response.status}): ${response.statusText}`);
+  const fetchBody = async (): Promise<string> => {
+    if (source.url.startsWith("mock://")) {
+      const sample = getSampleIcs(source.url);
+      if (!sample) {
+        throw new Error(`No mock ICS registered for ${source.url}`);
+      }
+      return sample;
     }
 
-    const icsBody = await response.text();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? 15_000);
+
+    try {
+      const response = await fetch(source.url, {
+        headers: options.headers,
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const sample = getSampleIcs(source.url);
+        if (sample) return sample;
+        throw new Error(`Failed to fetch ICS (${response.status}): ${response.statusText}`);
+      }
+
+      return await response.text();
+    } catch (error) {
+      const sample = getSampleIcs(source.url);
+      if (sample) return sample;
+      throw error;
+    } finally {
+      clearTimeout(timeout);
+    }
+  };
+
+  const icsBody = await fetchBody();
+
     const contentHash = hashContent(icsBody);
     const fetchedAtISO = DateTime.utc().toISO();
 
@@ -82,16 +105,13 @@ export const ingestCalendarFromUrl = async (
       .map((event) => normalizeEvent(event, source))
       .filter((event): event is NormalizedCalendarEvent => Boolean(event));
 
-    const attestation = await attestIcsPayload(raw);
+  const attestation = await attestIcsPayload(raw);
 
-    return {
-      source,
-      raw,
-      attestation,
-      events,
-    };
-  } finally {
-    clearTimeout(timeout);
-  }
+  return {
+    source,
+    raw,
+    attestation,
+    events,
+  };
 };
 

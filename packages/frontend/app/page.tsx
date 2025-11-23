@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
+  CalendarIngestionResult,
+  CalendarSource,
   IntentMatch,
   IntentPlan,
   PropertyDigest,
@@ -13,6 +15,27 @@ const statusBadge: Record<PropertyDigest["status"], string> = {
   held: "border-sky-400/40 bg-sky-500/10 text-sky-200",
   conflict: "border-rose-400/40 bg-rose-500/10 text-rose-200",
 };
+
+const defaultSources: CalendarSource[] = [
+  {
+    id: "palermo-ics",
+    url: "mock://palermo",
+    platform: "airbnb",
+    description: "Palermo Rooftop Loft (Airbnb ICS)",
+  },
+  {
+    id: "recoleta-ics",
+    url: "mock://conference",
+    platform: "google",
+    description: "La Rural conference delegate calendar",
+  },
+  {
+    id: "family-ics",
+    url: "mock://family",
+    platform: "vrbo",
+    description: "Colegiales Family Duplex (Vrbo feed)",
+  },
+];
 
 const verificationHighlights = [
   {
@@ -54,16 +77,26 @@ export default function Home() {
   const [state, setState] = useState<RequestState>("loading");
   const [error, setError] = useState<string | null>(null);
 
-  const requestPlan = useCallback(async (intent?: string) => {
+  const requestPlan = useCallback(async (intent?: string, sources: CalendarSource[] = defaultSources) => {
     const submitting = Boolean(intent);
     setState(submitting ? "submitting" : "loading");
     setError(null);
 
     try {
+      const payload: {
+        intent?: string;
+        sources: CalendarSource[];
+      } = {
+        sources,
+      };
+      if (intent) {
+        payload.intent = intent;
+      }
+
       const response = await fetch("/api/intent", {
-        method: intent ? "POST" : "GET",
-        headers: intent ? { "Content-Type": "application/json" } : undefined,
-        body: intent ? JSON.stringify({ intent }) : undefined,
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -82,7 +115,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    requestPlan();
+    requestPlan(undefined, defaultSources);
   }, [requestPlan]);
 
   const featured = plan?.featuredRecommendation;
@@ -91,6 +124,7 @@ export default function Home() {
   const timeline = plan?.timeline ?? [];
   const propertyInventory = plan?.propertyInventory ?? [];
   const heuristics = plan?.heuristics ?? [];
+  const ingestedCalendars = plan?.ingestedCalendars ?? [];
 
   const submitting = state === "submitting";
   const loading = state === "loading";
@@ -103,12 +137,12 @@ export default function Home() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!intentInput.trim()) return;
-    await requestPlan(intentInput);
+    await requestPlan(intentInput, defaultSources);
   };
 
   const handleQuickPrompt = async (prompt: QuickPrompt) => {
     setIntentInput(prompt.label);
-    await requestPlan(prompt.label);
+    await requestPlan(prompt.label, defaultSources);
   };
 
   if (loading && !plan) {
@@ -118,6 +152,14 @@ export default function Home() {
   const fallbackRecommendation: IntentMatch | undefined = plan?.alternativeRecommendations[0];
   const recommendationToDisplay = featured ?? fallbackRecommendation;
   const bookingsAvailable = alternatives.length > 0;
+
+  const formatDateRange = (startISO: string, endISO: string) => {
+    const start = new Date(startISO);
+    const end = new Date(endISO);
+    const startLabel = start.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    const endLabel = end.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    return `${startLabel} → ${endLabel}`;
+  };
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -395,6 +437,77 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {ingestedCalendars.length > 0 && (
+          <section className="glass-panel rounded-3xl border border-slate-600/30 px-8 py-10 backdrop-blur-2xl">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.32em] text-slate-400">Real-time sync</p>
+                <h3 className="mt-2 text-3xl font-semibold text-slate-50">
+                  Calendar ingestion proofs
+                </h3>
+                <p className="mt-3 text-sm text-slate-300">
+                  Each feed is parsed, hashed, and stamped with a Flare FDC attestation before it
+                  touches the booking ledger.
+                </p>
+              </div>
+              <span className="inline-flex rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-100">
+                {ingestedCalendars.length} feeds
+              </span>
+            </div>
+            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {ingestedCalendars.map((entry: CalendarIngestionResult) => (
+                <article
+                  key={entry.source.id}
+                  className="rounded-3xl border border-slate-600/30 bg-slate-900/60 px-5 py-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-100">
+                        {entry.source.description ?? entry.source.id}
+                      </p>
+                      <p className="text-xs uppercase tracking-[0.28em] text-slate-400">
+                        {entry.source.platform ?? "custom"}
+                      </p>
+                    </div>
+                    <span className="text-[11px] font-mono text-emerald-200">
+                      {entry.attestation.digest.slice(0, 12)}…
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs text-slate-400">
+                    Attested{" "}
+                    {new Date(entry.attestation.attestedAtISO).toLocaleTimeString(undefined, {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                    , confidence {(entry.attestation.confidence * 100).toFixed(0)}%
+                  </p>
+                  <ul className="mt-3 space-y-2 text-xs text-slate-200">
+                    {entry.events.slice(0, 2).map((event) => (
+                      <li
+                        key={event.uid}
+                        className="rounded-xl border border-slate-500/25 bg-slate-900/70 px-3 py-2"
+                      >
+                        <p className="text-slate-100">{event.summary}</p>
+                        <p className="text-[11px] text-slate-400">
+                          {formatDateRange(event.startISO, event.endISO)}
+                        </p>
+                      </li>
+                    ))}
+                    {entry.events.length > 2 ? (
+                      <li className="text-[11px] text-slate-500">
+                        +{entry.events.length - 2} more events synced
+                      </li>
+                    ) : null}
+                  </ul>
+                  <p className="mt-3 text-[11px] text-slate-500">
+                    Source hash: {entry.raw.contentHash.slice(0, 10)}…
+                  </p>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="glass-panel rounded-3xl border border-slate-600/30 px-8 py-10 backdrop-blur-2xl">
           <div className="grid gap-8 lg:grid-cols-[1.1fr,0.9fr]">

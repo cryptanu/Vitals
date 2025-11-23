@@ -1,3 +1,5 @@
+import type { CalendarIngestionResult } from "./ingestion/types";
+
 export type PropertyStatus = "available" | "held" | "conflict";
 
 export type QuickPrompt = {
@@ -56,6 +58,7 @@ export type IntentPlan = {
   propertyInventory: PropertyDigest[];
   heuristics: string[];
   generatedAtISO: string;
+  ingestedCalendars?: CalendarIngestionResult[];
 };
 
 export type {

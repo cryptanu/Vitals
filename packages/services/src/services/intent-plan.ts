@@ -1,14 +1,22 @@
 import { DateTime } from "luxon";
 import { QUICK_PROMPTS, RECOMMENDATIONS } from "../data/sample";
-import type { IntentPlan, IntentMatch } from "../types";
+import type { CalendarIngestionResult, CalendarSource, IntentPlan, IntentMatch } from "../types";
 import { computeConfidence, normalizeIntent, scoreRecommendation } from "../utils/intentScoring";
 import { getPropertyInventory } from "./properties";
 import { getTimelineForProperty } from "./timeline";
+import { ingestCalendars } from "../ingestion";
 
 const DEFAULT_INTENT =
   "Find a sunlit loft in Palermo for next weekend"; // matches first prompt for bootstrapping
 
-export const generateIntentPlan = (rawIntent?: string): IntentPlan => {
+export type GenerateIntentPlanOptions = {
+  sources?: CalendarSource[];
+};
+
+export const generateIntentPlan = async (
+  rawIntent?: string,
+  options: GenerateIntentPlanOptions = {}
+): Promise<IntentPlan> => {
   const normalizedIntent = normalizeIntent(rawIntent ?? "");
   const intentText = rawIntent?.trim().length ? rawIntent.trim() : DEFAULT_INTENT;
 
@@ -31,6 +39,15 @@ export const generateIntentPlan = (rawIntent?: string): IntentPlan => {
 
   const heuristics = buildHeuristics(featuredRecommendation, intentText);
 
+  let ingestedCalendars: CalendarIngestionResult[] | undefined;
+  if (options.sources && options.sources.length > 0) {
+    try {
+      ingestedCalendars = await ingestCalendars(options.sources);
+    } catch (error) {
+      console.error("Calendar ingestion failed", error);
+    }
+  }
+
   return {
     intent: intentText,
     quickPrompts: QUICK_PROMPTS,
@@ -40,6 +57,7 @@ export const generateIntentPlan = (rawIntent?: string): IntentPlan => {
     propertyInventory,
     heuristics,
     generatedAtISO: DateTime.utc().toISO(),
+    ingestedCalendars,
   };
 };
 
