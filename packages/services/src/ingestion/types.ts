@@ -25,11 +25,23 @@ export type NormalizedCalendarEvent = {
   source: CalendarSource;
 };
 
+export type AttestationProvider = "flare-fdc" | "mock";
+
 export type AttestationResult = {
-  provider: "flare-fdc";
+  provider: AttestationProvider;
   digest: string;
   attestedAtISO: string;
   confidence: number;
+  signature?: string;
+  workflowRunId?: string;
+  proofUri?: string;
+  notes?: string;
+};
+
+export type StorageProof = {
+  cid: string;
+  uri?: string;
+  persistedAtISO: string;
   notes?: string;
 };
 
@@ -38,5 +50,6 @@ export type CalendarIngestionResult = {
   raw: RawCalendarPayload;
   attestation: AttestationResult;
   events: NormalizedCalendarEvent[];
+  storage?: StorageProof;
 };
 
