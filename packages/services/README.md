@@ -13,6 +13,10 @@ Currently implemented
   property cards and verifiable timeline feed.
 - Sample data (`src/data/sample.ts`) standing in for future integrations (Flare, Filecoin, Nylas, etc.).
 - Intent scoring helpers in `src/utils/intentScoring.ts`.
+- Calendar ingestion helper `ingestCalendarFromUrl(source)` that:
+  - Fetches remote ICS feeds
+  - Normalizes events into our internal format
+  - Generates a placeholder Flare FDC attestation (to be swapped with real proof)
 
 Roadmap
 -------

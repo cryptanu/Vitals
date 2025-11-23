@@ -58,3 +58,10 @@ export type IntentPlan = {
   generatedAtISO: string;
 };
 
+export type {
+  CalendarSource,
+  CalendarIngestionResult,
+  NormalizedCalendarEvent,
+  AttestationResult,
+} from "./ingestion/types";
+
